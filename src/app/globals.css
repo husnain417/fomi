@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+:root {
+  --color-cream: #f4ede1;
+  --color-cream-deep: #ede3d3;
+  --color-panel: #f7ece2;
+  --color-card: #ffffff;
+  --color-ink: #2b241d;
+  --color-ink-soft: #4a4038;
+  --color-muted: #a89c8d;
+  --color-muted-2: #c9bdac;
+  --color-border: #ecdfcb;
+  --color-accent: #d98a63;
+  --color-accent-dark: #c7754c;
+  --color-accent-soft: #f1c9a8;
+  --color-accent-track: #f0dcc3;
+  --radius-lg: 1.5rem;
+  --radius-md: 1rem;
+  --radius-sm: 0.75rem;
+}
+
+@theme inline {
+  --color-cream: var(--color-cream);
+  --color-cream-deep: var(--color-cream-deep);
+  --color-panel: var(--color-panel);
+  --color-card: var(--color-card);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-muted: var(--color-muted);
+  --color-muted-2: var(--color-muted-2);
+  --color-border: var(--color-border);
+  --color-accent: var(--color-accent);
+  --color-accent-dark: var(--color-accent-dark);
+  --color-accent-soft: var(--color-accent-soft);
+  --color-accent-track: var(--color-accent-track);
+  --font-display: ui-rounded, "SF Pro Rounded", "Segoe UI Rounded", "Nunito",
+    "Quicksand", "Comfortaa", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, -apple-system, "Segoe UI", Roboto,
+    system-ui, sans-serif;
+}
+
+html.dark {
+  --color-cream: #211d18;
+  --color-cream-deep: #1a1713;
+  --color-panel: #2a251e;
+  --color-card: #2f2a22;
+  --color-ink: #f3ece1;
+  --color-ink-soft: #d8cdbd;
+  --color-muted: #8d8073;
+  --color-muted-2: #675d51;
+  --color-border: #3a3327;
+  --color-accent: #e2916a;
+  --color-accent-dark: #d9814f;
+  --color-accent-soft: #4a3a2b;
+  --color-accent-track: #3a3024;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: var(--font-display), ui-rounded, system-ui, sans-serif;
+}
+
+/* Hide scrollbar but keep scrollability for the history strip */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
