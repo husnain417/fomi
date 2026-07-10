@@ -5,6 +5,11 @@ import Header from "@/components/Header";
 import HistoryStrip from "@/components/HistoryStrip";
 import GeneratePanel from "@/components/GeneratePanel";
 import ResultsFeed from "@/components/ResultsFeed";
+import FeatureHighlights from "@/components/FeatureHighlights";
+import ShowcaseMarquee from "@/components/ShowcaseMarquee";
+import FeaturedToolsSlider from "@/components/FeaturedToolsSlider";
+import CommunityGallery from "@/components/CommunityGallery";
+import Footer from "@/components/Footer";
 import { historyItems, initialGenerations, seededPhoto } from "@/data/mockData";
 
 // Convert the seed-only mock data into the same shape the live API returns,
@@ -59,16 +64,27 @@ export default function Page() {
         <HistoryStrip items={historyItems} />
 
         {error && (
-          <p role="alert" className="text-sm text-red-600 px-1">
+          <p
+            role="alert"
+            className="text-sm text-error bg-error-soft border border-error/20 rounded-2xl px-4 py-2.5"
+          >
             {error}
           </p>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] lg:grid-cols-[340px_1fr] 2xl:grid-cols-[380px_1fr] gap-4 items-start">
           <GeneratePanel onGenerate={handleGenerate} isGenerating={isGenerating} />
           <ResultsFeed generations={generations} isGenerating={isGenerating} />
         </div>
+
+        <div className="border-t border-border mt-4">
+          <FeaturedToolsSlider />
+          <FeatureHighlights />
+          <ShowcaseMarquee />
+          <CommunityGallery />
+        </div>
       </main>
+      <Footer />
     </div>
   );
 }

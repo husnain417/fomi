@@ -25,7 +25,7 @@ export const initialGenerations = [
   {
     id: "gen-1",
     prompt:
-      "A professional portrait photograph of a smiling 31-year-old redheaded woman with warm brown eyes and softly tousled auburn hair framing her face. She is turned slightly towards the viewer, offering a genuine and approachable expression. She is wearing a cream-colored cashmere sweater and delicate gold earrings. The background is a softly blurred expanse of muted gray and beige tones, suggesting a modern art gallery. There is subtle directional lighting.",
+      "A professional portrait photograph of a smiling 31-year-old redheaded woman with warm brown eyes and softly tousled auburn hair framing her face. She is turned slightly towards the viewer, offering a genuine and approachable expression.",
     tag: "Model",
     seed: "redhead-portrait",
     count: 4,
@@ -38,8 +38,50 @@ export const initialGenerations = [
     seed: "redhead-portrait-b",
     count: 4,
   },
+  {
+    id: "gen-3",
+    prompt:
+      "The same subject, reframed as a candid editorial series: warm cashmere knit, soft studio backdrop, natural daylight falling across one side of the face.",
+    tag: "Model",
+    seed: "redhead-portrait-b",
+    count: 4,
+  },
 ];
 
-export const models = ["Aurora XL", "Aurora Portrait", "Aurora Realtime", "Aurora Cinema"];
-export const aspectRatios = ["1:1", "3:4", "4:3", "9:16", "16:9"];
+// Model and ratio catalogs for the Generate panel's custom pickers.
+// `models` carries an optional `tag` badge; `aspectRatios` carries the raw
+// w/h so the picker can draw a proportionally accurate little rectangle
+// icon per ratio instead of just a text label.
+export const models = [
+  { name: "Aurora XL", tag: "Popular" },
+  { name: "Aurora Cinema Pro" },
+  { name: "Aurora Portrait" },
+  { name: "Aurora Realtime", tag: "Fast" },
+  { name: "Aurora Turbo", tag: "Fast" },
+  { name: "Nova Standard" },
+  { name: "Nova Pro" },
+  { name: "Nova Fast", tag: "Fast" },
+  { name: "Lumen v2 Pro" },
+  { name: "Lumen v2 Standard" },
+  { name: "Lumen v3", tag: "New" },
+  { name: "Prism Fast", tag: "Fast" },
+  { name: "Prism Lite" },
+  { name: "Halo 2.3" },
+  { name: "Halo 2 Pro" },
+];
+
+export const aspectRatios = [
+  { label: "1:1", w: 1, h: 1 },
+  { label: "4:3", w: 4, h: 3 },
+  { label: "3:2", w: 3, h: 2 },
+  { label: "16:9", w: 16, h: 9 },
+  { label: "9:16", w: 9, h: 16 },
+  { label: "2:3", w: 2, h: 3 },
+  { label: "4:5", w: 4, h: 5 },
+  { label: "5:4", w: 5, h: 4 },
+  { label: "12:5", w: 12, h: 5 },
+  { label: "3:1", w: 3, h: 1 },
+  { label: "5:12", w: 5, h: 12 },
+];
+
 export const imageCounts = [1, 2, 4, 8];

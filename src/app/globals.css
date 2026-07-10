@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --color-cream: #f4ede1;
-  --color-cream-deep: #ede3d3;
-  --color-panel: #f7ece2;
+  --color-cream: #fcfaf8;
+  --color-cream-deep: #f8eee8;
+  --color-panel: #f8eee8;
   --color-card: #ffffff;
   --color-ink: #2b241d;
   --color-ink-soft: #4a4038;
@@ -14,6 +14,18 @@
   --color-accent-dark: #c7754c;
   --color-accent-soft: #f1c9a8;
   --color-accent-track: #f0dcc3;
+  --color-error: #b3402f;
+  --color-error-soft: #f6dcd5;
+  --color-chip-slate: #dbe2ea;
+  --color-chip-slate-fg: #46586b;
+  --color-chip-peach: #f4dcc0;
+  --color-chip-peach-fg: #a5711f;
+  --color-chip-rose: #f6d9d4;
+  --color-chip-rose-fg: #b5564a;
+  --color-chip-gold: #f7e9b8;
+  --color-chip-gold-fg: #a3821f;
+  --color-tab-track: #fcfaf8;
+  --color-tab-active: #f8eee8;
   --radius-lg: 1.5rem;
   --radius-md: 1rem;
   --radius-sm: 0.75rem;
@@ -33,10 +45,20 @@
   --color-accent-dark: var(--color-accent-dark);
   --color-accent-soft: var(--color-accent-soft);
   --color-accent-track: var(--color-accent-track);
-  --font-display: ui-rounded, "SF Pro Rounded", "Segoe UI Rounded", "Nunito",
-    "Quicksand", "Comfortaa", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Inter", ui-sans-serif, -apple-system, "Segoe UI", Roboto,
-    system-ui, sans-serif;
+  --color-error: var(--color-error);
+  --color-error-soft: var(--color-error-soft);
+  --color-chip-slate: var(--color-chip-slate);
+  --color-chip-slate-fg: var(--color-chip-slate-fg);
+  --color-chip-peach: var(--color-chip-peach);
+  --color-chip-peach-fg: var(--color-chip-peach-fg);
+  --color-chip-rose: var(--color-chip-rose);
+  --color-chip-rose-fg: var(--color-chip-rose-fg);
+  --color-chip-gold: var(--color-chip-gold);
+  --color-chip-gold-fg: var(--color-chip-gold-fg);
+  --color-tab-track: var(--color-tab-track);
+  --color-tab-active: var(--color-tab-active);
+  --font-display: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 }
 
 html.dark {
@@ -53,6 +75,18 @@ html.dark {
   --color-accent-dark: #d9814f;
   --color-accent-soft: #4a3a2b;
   --color-accent-track: #3a3024;
+  --color-error: #e58a79;
+  --color-error-soft: #3d2420;
+  --color-chip-slate: #33404c;
+  --color-chip-slate-fg: #b7c6d6;
+  --color-chip-peach: #4a3a22;
+  --color-chip-peach-fg: #e3b06c;
+  --color-chip-rose: #4a2b27;
+  --color-chip-rose-fg: #e2938a;
+  --color-chip-gold: #4a3f1f;
+  --color-chip-gold-fg: #e0c465;
+  --color-tab-track: #1a1713;
+  --color-tab-active: #2f2a22;
 }
 
 * {
@@ -64,6 +98,37 @@ body {
   color: var(--color-ink);
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Cross-fade colors when the theme flips, instead of an abrupt cut. Scoped
+   to the properties theming actually touches, so it never fights the
+   existing per-component `transition-colors` / `transition-opacity`
+   utilities (hover states etc. keep their own faster timing). */
+*,
+*::before,
+*::after {
+  transition: background-color 0.25s ease, border-color 0.25s ease,
+    color 0.25s ease, box-shadow 0.25s ease, fill 0.25s ease, stroke 0.25s ease;
+}
+
+/* Scrollbars follow the theme instead of defaulting to the OS light style
+   inside a dark UI. */
+html {
+  scrollbar-color: var(--color-muted-2) var(--color-cream-deep);
+}
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-cream-deep);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-muted-2);
+  border-radius: 999px;
+  border: 3px solid var(--color-cream-deep);
 }
 
 .font-display {
@@ -87,5 +152,35 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+@keyframes picker-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 32s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
   }
 }

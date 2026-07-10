@@ -19,23 +19,23 @@ export default function ResultsFeed({ generations, isGenerating }) {
   return (
     <div className="flex flex-col gap-8">
       {generations.map((gen) => (
-        <article key={gen.id} className="flex flex-col gap-4">
-          <div className="rounded-3xl bg-panel border border-border p-5 flex flex-col sm:flex-row sm:items-start gap-4">
-            <p className="text-sm leading-relaxed text-ink-soft flex-1">
-              {gen.prompt}
-            </p>
-            <span className="self-start sm:self-auto shrink-0 rounded-full bg-card border border-border px-4 py-1.5 text-sm font-medium text-ink">
+        <article key={gen.id} className="flex flex-col lg:flex-row gap-4">
+          <div className="rounded-3xl bg-panel border border-border p-5 flex flex-col gap-4 lg:w-72 lg:shrink-0">
+            <p className="text-sm leading-relaxed text-ink-soft">{gen.prompt}</p>
+            <span className="self-start shrink-0 rounded-full bg-card border border-border px-4 py-1.5 text-sm font-medium text-ink">
               {gen.tag ?? "Model"}
             </span>
           </div>
-          <ImageGrid images={gen.images} />
+          <div className="flex-1 min-w-0">
+            <ImageGrid images={gen.images} />
+          </div>
         </article>
       ))}
 
       {isGenerating && (
-        <article className="flex flex-col gap-4" aria-live="polite">
-          <div className="rounded-3xl bg-panel border border-border p-5 animate-pulse h-20" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <article className="flex flex-col lg:flex-row gap-4" aria-live="polite">
+          <div className="rounded-3xl bg-panel border border-border p-5 animate-pulse h-40 lg:w-72 lg:shrink-0" />
+          <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
