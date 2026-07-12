@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { THEME_KEY, applyTheme, getStoredTheme } from "@/lib/theme";
+import { THEME_KEY, applyTheme } from "@/lib/theme";
 
 /**
  * Theme state lives on <html class="dark"> (set synchronously pre-hydration
@@ -18,18 +18,6 @@ export function useTheme() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    function onSystemChange(e) {
-      if (getStoredTheme()) return; // user has an explicit preference — don't override it
-      const next = e.matches ? "dark" : "light";
-      applyTheme(next);
-      setThemeState(next);
-    }
-    media.addEventListener("change", onSystemChange);
-    return () => media.removeEventListener("change", onSystemChange);
-  }, []);
 
   const setTheme = useCallback((next) => {
     applyTheme(next);

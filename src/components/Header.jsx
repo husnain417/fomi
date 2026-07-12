@@ -460,6 +460,15 @@ export default function Header({ active: activeProp, onNavigate }) {
                   You're browsing as a guest.
                 </p>
                 <div className="flex flex-col gap-2">
+                <button
+                    type="button"
+                    onClick={toggleTheme}
+                    aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                    className="sm:hidden w-full flex items-center justify-between rounded-full border border-border text-ink text-sm font-medium py-2 px-4 hover:bg-cream-deep transition-colors"
+                  >
+                    <span>{isDark ? "Light mode" : "Dark mode"}</span>
+                    {mounted && isDark ? <Sun size={16} /> : <Moon size={16} />}
+                  </button>
                   <button
                     type="button"
                     className="w-full rounded-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] text-white text-sm font-semibold py-2 transition-colors"

@@ -22,6 +22,9 @@ export default function CommunityGallery() {
   return (
     <section id="community-gallery" className="py-16 sm:py-20 max-w-7xl mx-auto w-full px-4 scroll-mt-20">
       <Reveal as="header" className="max-w-2xl mx-auto text-center mb-12 px-4">
+      <p className="text-sm font-medium text-accent-dark mb-2 tracking-wide uppercase">
+          Gallery
+        </p>
         <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold text-ink mb-3">
           Community gallery
         </h2>

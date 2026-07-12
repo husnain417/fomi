@@ -12,12 +12,7 @@ export const themeInitScript = `
 (function () {
   try {
     var stored = localStorage.getItem(${JSON.stringify(THEME_KEY)});
-    var theme =
-      stored === "light" || stored === "dark"
-        ? stored
-        : window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
+    var theme = stored === "dark" ? "dark" : "light";
     var root = document.documentElement;
     root.classList.toggle("dark", theme === "dark");
     root.style.colorScheme = theme;
