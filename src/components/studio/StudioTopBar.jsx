@@ -81,15 +81,23 @@ export default function StudioTopBar({
           <PanelRight size={18} />
         </button>
 
-        <button
-          type="button"
-          onClick={onToggleTheme}
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          aria-pressed={theme === "dark"}
-          className="p-2 rounded-md text-ink-soft hover:text-ink hover:bg-cream-deep transition-colors"
-        >
-          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
+        <div className="relative group/tooltip">
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            aria-pressed={theme === "dark"}
+            className="p-2 rounded-md text-ink-soft hover:text-ink hover:bg-cream-deep transition-colors"
+          >
+            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          <span
+            role="tooltip"
+            className="pointer-events-none absolute right-0 top-full mt-1.5 whitespace-nowrap rounded-md bg-black/85 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg backdrop-blur-sm transition-opacity duration-150 delay-300 group-hover/tooltip:opacity-100 z-10"
+          >
+            {theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          </span>
+        </div>
 
         <div
           className="w-7 h-7 rounded-full bg-accent-soft text-accent-dark font-display text-xs font-medium flex items-center justify-center shrink-0"

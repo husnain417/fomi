@@ -264,20 +264,27 @@ export default function Loupe({
 
 function LoupeButton({ icon, label, onClick, active, disabled }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={label}
-      aria-label={label}
-      aria-pressed={active || undefined}
-      className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
-        active
-          ? "bg-accent text-white"
-          : "bg-black/60 text-white hover:bg-black/75"
-      }`}
-    >
-      {icon}
-    </button>
+    <div className="relative group/tooltip">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        aria-label={label}
+        aria-pressed={active || undefined}
+        className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+          active
+            ? "bg-accent text-white"
+            : "bg-black/60 text-white hover:bg-black/75"
+        }`}
+      >
+        {icon}
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute right-0 top-full mt-1.5 whitespace-nowrap rounded-md bg-black/85 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg backdrop-blur-sm transition-opacity duration-150 delay-300 group-hover/tooltip:opacity-100 z-10"
+      >
+        {label}
+      </span>
+    </div>
   );
 }

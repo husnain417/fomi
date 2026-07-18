@@ -6,6 +6,8 @@ Strength-steering layered on top of the usual discrete generate flow. See
 [`PRODUCT_THINKING.md`](./PRODUCT_THINKING.md) for the reasoning behind the
 major decisions, including the one differentiating feature.
 
+**Live:** `https://fomi-tan.vercel.app/` — swap in your real URL
+
 ## Running locally
 
 ```bash
@@ -88,5 +90,6 @@ Without this, `ThreadNode` and `Filmstrip` thumbnails (converted to
   are called for in the Part C spec (§5) and are the right next step
   before treating the workspace as verified-accessible, not just
   structurally-correct.
-- **Not yet deployed.** This pass focused on the code; standing up a
-  public Vercel deployment (Part C §6) is still open.
+- **Deployed on Vercel** — no server-side persistence beyond what's
+  already noted above (in-memory tree, mock API); the deployment doesn't
+  change any of those limitations, it's the same app running remotely.
