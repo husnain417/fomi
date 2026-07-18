@@ -1,75 +1,88 @@
-# Product thinking — Part C: Continuous Steering & Consolidation
+# Product Thinking — /studio (Thread & Loupe)
 
-This file covers the reasoning for the Part C pass specifically. Parts A/B
-(Threads, Loupe, Compare, Inspector, Composer, Command Palette) have their
-own prior decisions baked into the code and comments; this is the
-continuation, not a replacement.
+## 1. What problem were you solving, and for who?
 
-## Section 6 — The one differentiating feature
+If you generate a lot of variants in one sitting, you lose track of which
+attempt came from which idea. History ends up as one long flat list —
+you regenerate, it either overwrites or gets tacked on the bottom, and an
+hour later you can't tell what led to what.
 
-**It shipped.** Live Strength-steering is in: `hooks/usePreviewSteering.js`,
-wired through `Inspector`'s Strength slider into the Loupe.
+I designed for someone already deep into a project, not a first-time
+visitor. That's why there's no onboarding or empty state — the workspace
+just opens where you left it.
 
-**The answer, and why it's true:**
+## 2. Three UX decisions that mattered most
 
-> Branching is still discrete — it's a deliberate decision that becomes
-> part of your history. But refining strength on an attempt you already
-> like is continuous — you're steering it in place, and nothing you see
-> while doing that costs you a spot in the tree until you decide it's
-> worth keeping.
+1. **Branching tree instead of a flat history.** Regenerating from a
+   result makes a child node under it, so you can actually see how one
+   idea led to another instead of losing the thread.
+2. **Command palette instead of a sidebar full of dropdowns.** Model,
+   ratio, strength — all behind Cmd+K instead of permanently on screen.
+   Also fixed it so picking a model shows a checkmark and doesn't close
+   the palette, so you can flip through options without reopening it
+   every time.
+3. **Dark mode by default, only on this page.** Tools people stare at for
+   hours (Lightroom, VS Code, Figma) default dark for a reason — less eye
+   strain, and a bright frame around a photo messes with how you judge
+   its actual color. Homepage stays light, `/studio` starts dark, same
+   toggle either way.
 
-Everything else in this workspace — the tree, the Loupe, the palette — is
-a better way to *navigate* a request/response loop that every other tool
-in this category also has. Preview steering is the one place the loop
-itself changes shape. Before this pass, "adjust a parameter" and "commit a
-generation" were the same action wearing two different amounts of
-patience. Now they're genuinely two different things: a live, disposable,
-abortable fetch that never touches `useThreadTree`, and a separate,
-deliberate action (Generate) that's the only thing that writes a node.
+## 3. What I left out on purpose
 
-**What made the cut, and what didn't:**
+- **Infinite canvas.** Everyone's doing this right now (Krea, Lovart,
+  Grok Imagine). Copying the trend isn't the original choice anymore.
+- **A permanent sidebar of every control.** Only show what's relevant to
+  what you're doing right now, not everything all the time.
+- **Standalone Export/Compare buttons.** Export moved into the palette.
+  Compare just turns on automatically once you pick a second image to
+  compare, and has its own exit button. Fewer permanent buttons, nothing
+  you could do before is gone.
+- **A templates gallery.** Feels like a first-time-user feature on a page
+  built for someone who's already deep in.
+- **Steering Model or Ratio, not just Strength.** Strength is genuinely a
+  dial — turn it up or down and it's still the same idea. Model or Ratio
+  change what the idea basically *is*, so those should stay a deliberate
+  action, not something you can slide past accidentally.
 
-- **Strength only.** The spec was explicit that Model and Ratio stay
-  request-only for this pass, and implementing it made the reasoning
-  concrete rather than just asserted: Strength is a dial on an existing
-  result — turning it further toward or away from the source image reads
-  as *the same idea, adjusted*. Model and Ratio don't share that property;
-  either one produces something closer to *a different idea entirely*,
-  which is exactly the kind of change that should cost a spot in the tree,
-  not slide past disposably. If Strength earns its keep in practice, Ratio
-  is the more plausible next candidate (it's still a continuous
-  parameter on the same image) — Model almost certainly should stay
-  discrete permanently.
-- **Debounce + abort, not just debounce.** The spec called out the race
-  condition explicitly (§1.2/§7) — a slow first request landing after a
-  faster second one — as "the one place in this entire pass where a bug
-  would actually be visible and embarrassing." It's handled with a
-  monotonically increasing request token plus an `AbortController` per
-  request, checked in both the success and error paths, not just relied
-  on debounce timing to make it unlikely.
-- **No new surface.** The preview renders inside the existing Loupe using
-  the existing crossfade mechanism (same `key={url}` pattern that already
-  handled prev/next image swaps), plus one small badge. No new panel,
-  modal, or region — that was the explicit guardrail for this whole pass
-  (§2.3), and it was easy to hold to here specifically because the Loupe
-  already had a slot-shaped hole for "the image that's currently showing"
-  to slot a different url into.
+## 4. What inspired it
 
-**What was weighed and set aside:** an earlier option considered was
-surfacing preview state in the Inspector itself (a small thumbnail next to
-the slider) in addition to the Loupe. That would have been a second,
-smaller surface for the same information the Loupe already shows at full
-size, and would have meant explaining *two* places where "is this saved"
-needed to be legible instead of one. Cut in favor of the Loupe being the
-single source of truth for "what am I looking at right now" — which is
-also just... its job already.
+The tree isn't copied from any specific AI tool — it's closer to how
+version history/branching works in general. The big single-image viewer
+(the "Loupe") is straight from Lightroom/Capture One's culling workflow —
+a large image, a strip of siblings underneath, built for deciding, not
+scrolling. Pulling from photo software instead of another AI generator
+was deliberate, so it doesn't just end up looking like Krea with new
+colors.
 
-## Section 2 — Consolidation notes
+What's missing from that reference: photo culling assumes one linear roll
+of shots. It has no concept of "these 40 images came from 6 different
+ideas." That's the actual gap the tree fills.
 
-Export lost its top-bar button; it's palette-only now (§2.1). Compare lost
-its top-bar *toggle*, not the feature — it activates automatically the
-moment a second image joins the comparison set, and `CompareView` grew its
-own `Exit compare` control in the header row it already had (§2.2). Net
-effect: two fewer permanently-rendered buttons in the chrome for actions
-that were always reachable another way, without removing anything a
-person could previously do.
+## 5. With another month
+
+- Let Ratio be steerable too, same as Strength — it's the next most
+  reasonable continuous parameter.
+- Auto-label branches by what changed in the prompt, not just the full
+  prompt truncated — easier to scan the tree at a glance.
+- A "merge" action — take two branches' choices and combine them into one
+  new attempt instead of only branching one at a time.
+- Actual persistence. Right now it's all against a mock API — the autosave
+  indicator is honest about it, there's just nothing behind it yet.
+- Multiplayer, so someone else's branches show up live in the same tree.
+
+## 6. The one thing that actually makes this different
+
+Live strength-steering while you're mid-branch. Branching is still a real
+decision — it becomes permanent history. But dragging the Strength slider
+just previews, live, without writing anything to the tree until you
+actually hit Generate. It's debounced and cancels its own in-flight
+requests, so if you drag it around a lot, you never get a slow old
+request landing late and showing you the wrong image.
+
+Everything else here — tree, Loupe, palette — is a better way to move
+through a request-and-wait loop every other tool already has. This is the
+one place the loop itself is different: adjusting something and
+committing to something used to be the same action, just with more or
+less patience. Now they're actually separate. It also lives inside the
+Loupe you already have instead of a new panel — didn't want a second
+place that had to explain "is this saved or not."
