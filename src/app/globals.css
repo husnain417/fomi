@@ -29,6 +29,14 @@
   --radius-lg: 1.5rem;
   --radius-md: 1rem;
   --radius-sm: 0.75rem;
+
+  /* Studio-only tokens. The rest of /studio reuses the palette above; these
+     fill the few gaps that don't already exist (thread-tree connectors,
+     the studio's own dark-default surfaces, and a live-state accent). */
+  --color-studio-connector: #c9bdac;
+  --color-studio-surface: #f8eee8;
+  --color-studio-surface-raised: #ffffff;
+  --color-studio-live: #4caf7d;
 }
 
 @theme inline {
@@ -57,6 +65,10 @@
   --color-chip-gold-fg: var(--color-chip-gold-fg);
   --color-tab-track: var(--color-tab-track);
   --color-tab-active: var(--color-tab-active);
+  --color-studio-connector: var(--color-studio-connector);
+  --color-studio-surface: var(--color-studio-surface);
+  --color-studio-surface-raised: var(--color-studio-surface-raised);
+  --color-studio-live: var(--color-studio-live);
   --font-display: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 }
@@ -87,6 +99,10 @@ html.dark {
   --color-chip-gold-fg: #e0c465;
   --color-tab-track: #1a1713;
   --color-tab-active: #2f2a22;
+  --color-studio-connector: #47402f;
+  --color-studio-surface: #1a1713;
+  --color-studio-surface-raised: #211d18;
+  --color-studio-live: #6fcf9a;
 }
 
 * {
@@ -183,4 +199,132 @@ html {
   .animate-marquee {
     animation: none;
   }
+}
+
+/* ---------------------------------------------------------------------
+   /studio — Thread & Loupe
+   ------------------------------------------------------------------- */
+
+/* Thread tree connectors. Each non-root node gets an elbow (vertical-then-
+   curved-horizontal, classic org-chart technique) reaching back into its
+   parent's indent, plus a trunk segment continuing down to the next
+   sibling so the vertical line reads as unbroken until the last child. */
+.thread-children {
+  list-style: none;
+  margin: 2px 0 2px 20px;
+  padding-left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.thread-elbow {
+  position: absolute;
+  top: 0;
+  left: -20px;
+  width: 20px;
+  height: 18px;
+  border-left: 2px solid var(--color-studio-connector);
+  border-bottom: 2px solid var(--color-studio-connector);
+  border-bottom-left-radius: 10px;
+  pointer-events: none;
+}
+
+.thread-trunk-continue {
+  position: absolute;
+  top: 18px;
+  left: -20px;
+  bottom: -2px;
+  width: 0;
+  border-left: 2px solid var(--color-studio-connector);
+  pointer-events: none;
+}
+
+/* Branch-creation animation: the connector draws itself in, left-to-right
+   (vertical segment first, then the curve into the new node), instead of
+   just appearing. ~250ms, ease-out, per spec. */
+@keyframes thread-grow {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+.thread-elbow-grow {
+  animation: thread-grow 250ms ease-out;
+}
+
+/* Loupe crossfade: the incoming layer fades up over the outgoing one,
+   which is simply left underneath already fully opaque. Deliberately
+   short — this is a tool people swap images in dozens of times an hour,
+   not a reveal moment. */
+@keyframes loupe-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.loupe-fade-in {
+  animation: loupe-fade-in 180ms ease-out;
+}
+
+/* Command palette: scale+fade, snappy, under 150ms. */
+@keyframes palette-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.palette-in {
+  animation: palette-in 130ms ease-out;
+  transform-origin: top center;
+}
+
+/* Inspector / rail overlay slide-ins for tablet/mobile. */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.slide-in-right {
+  animation: slide-in-right 180ms ease-out;
+}
+
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.slide-in-left {
+  animation: slide-in-left 180ms ease-out;
+}
+
+/* Loupe stage while a commit (Generate) is in flight and no preview is
+   already on screen to show instead. Understated on purpose — a soft
+   opacity breathe on the existing bordered frame, not a shimmer/skeleton
+   system. See Part C spec §3. */
+@keyframes stage-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.stage-pulse {
+  animation: stage-pulse 1.6s ease-in-out infinite;
 }

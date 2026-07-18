@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Poppins } from "next/font/google";
+import Script from "next/script";
 import { themeInitScript } from "@/lib/theme";
 
 // weight 400 only, per the requested "Family Poppins" setup. next/font
@@ -37,10 +38,14 @@ export default function RootLayout({ children }) {
     // this flag tells React that's expected, instead of it being a real
     // mismatch.
     <html lang="en" className={poppins.variable} suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeInitScript }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
