@@ -1,17 +1,64 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Star, GitBranch, Plus, Check, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Star, GitBranch, Plus, Check, ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
 
-// "4:5" -> "4 / 5" for the CSS aspect-ratio property. Used for BOTH the
-// generating placeholder and the loaded image's container, so the frame
-// is exactly the right shape from the very first render in either state —
-// nothing waits on the actual bitmap to arrive before claiming its space.
+// "4:5" -> "4 / 5" for the CSS aspect-ratio property.
 function ratioToAspectCss(ratio) {
   const parts = (ratio || "1:1").split(":").map(Number);
   const [w, h] = parts;
   if (!w || !h) return "1 / 1";
   return `${w} / ${h}`;
+}
+
+const STAGE_HEIGHT = "min(65vh, 600px)";
+
+// The box's real size = min(available width, height-budget * ratio), with
+// height always DERIVED from that width via aspect-ratio — never fixed
+// independently. That's what makes this distortion-proof: there's only
+// ever one source of truth (width), so width and height can never
+// disagree with the declared ratio, on any viewport. (A fixed height +
+// max-width approach was tried and measurably distorts wide ratios once
+// the available width gets tight — verified, not a hunch.)
+function stageWidthCap(ratio) {
+  const [w, h] = (ratio || "1:1").split(":").map(Number);
+  const decimal = w && h ? w / h : 1;
+  return `calc(${STAGE_HEIGHT} * ${decimal})`;
+}
+
+// Same visual language as the top bar's theme-toggle tooltip, applied
+// consistently to every icon button in the Loupe. Native `title`
+// attributes turned out to be unreliable here (OS-level, hover-delay
+// dependent, not something we can guarantee or verify) — this is plain
+// DOM/CSS, so it's actually testable and it's what's already proven to
+// work elsewhere in the app.
+function IconTooltip({ label, children, align = "center", className }) {
+  const alignClass =
+    align === "right"
+      ? "right-0"
+      : align === "left"
+      ? "left-0"
+      : "left-1/2 -translate-x-1/2";
+  // Deliberately not hardcoding "relative" alongside whatever position
+  // class the caller passes — having both "relative" and "absolute" on
+  // the same element is a same-property conflict that Tailwind resolves
+  // by stylesheet order, not by which class appears later in the string,
+  // and it silently discarded "absolute" every time. The caller's own
+  // position class is now the only one in play; this default only
+  // applies when a caller doesn't need special positioning (e.g. icons
+  // that just flow inside an already-positioned toolbar row).
+  const positionClass = className || "relative inline-flex";
+  return (
+    <div className={`group/tooltip ${positionClass}`}>
+      {children}
+      <span
+        role="tooltip"
+        className={`pointer-events-none absolute top-full mt-1.5 ${alignClass} whitespace-nowrap rounded-md bg-black/85 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg backdrop-blur-sm transition-opacity duration-150 delay-300 group-hover/tooltip:opacity-100 z-20`}
+      >
+        {label}
+      </span>
+    </div>
+  );
 }
 
 export default function Loupe({
@@ -37,37 +84,57 @@ export default function Loupe({
   const displayImage = previewImage || savedImage;
   const targetUrl = displayImage?.url ?? null;
 
-  // `currentUrl`/`prevUrl` are what's actually painted. Deliberately NOT
-  // the same as `targetUrl` — we only promote a url to `currentUrl` once
-  // it has been preloaded and decoded off-screen, so the crossfade never
-  // starts on an image that isn't actually ready to paint instantly.
-  // That's what removes the flicker: previously the swap happened the
-  // instant you clicked, so a fast second click could interrupt an image
-  // that hadn't finished loading and briefly flash it on screen anyway.
-  const [currentUrl, setCurrentUrl] = useState(targetUrl);
-  const [prevUrl, setPrevUrl] = useState(null);
-  const currentUrlRef = useRef(targetUrl);
+  // `current` is what's actually painted; `previous` is the outgoing
+  // image kept mounted just long enough for the crossfade. `current`
+  // only ever changes to a url that has already finished loading AND
+  // decoding — see the preload effect below — so the fade-in animation
+  // and the arrival of real pixels are always in sync instead of racing
+  // each other (that race was the original flicker bug).
+  const [current, setCurrent] = useState(targetUrl);
+  const [previous, setPrevious] = useState(null);
+  // True for the gap between "a new target was requested" and "it's
+  // actually decoded and on screen." Without this, clicking next/prev on
+  // an image the browser hasn't cached yet reads as a dropped click —
+  // `current` doesn't change until decode finishes, so nothing visibly
+  // happens in between. This only ever gates a loading affordance; it
+  // never gates *which* url eventually gets committed — that's still
+  // entirely decided by latestRequestedRef in commit() below.
+  const [isSwitching, setIsSwitching] = useState(false);
+  const currentRef = useRef(targetUrl);
   const latestRequestedRef = useRef(targetUrl);
-  const clearTimerRef = useRef(null);
+  const clearPrevTimeoutRef = useRef(null);
+  const switchingTimeoutRef = useRef(null);
 
   useEffect(() => {
-    if (!targetUrl || targetUrl === currentUrlRef.current) return;
-
+    if (!targetUrl || targetUrl === currentRef.current) return;
     latestRequestedRef.current = targetUrl;
+
+    // Small delay before showing the loading state — most cached/already-
+    // seen images (going back to something you just looked at) decode in
+    // a handful of milliseconds, and flashing a spinner for that would
+    // read as noisier, not more responsive. Only the genuinely-slow loads
+    // (first time this url has ever been fetched) end up showing it.
+    window.clearTimeout(switchingTimeoutRef.current);
+    switchingTimeoutRef.current = window.setTimeout(() => {
+      if (latestRequestedRef.current === targetUrl) setIsSwitching(true);
+    }, 120);
+
     let cancelled = false;
     const img = new window.Image();
     img.src = targetUrl;
 
     function commit() {
-      // If the user clicked again before this particular image finished
-      // loading, `latestRequestedRef` has already moved on to a newer
-      // target — drop this stale result instead of flashing it on screen.
+      // A newer selection superseded this one while it was loading (e.g.
+      // clicking through several filmstrip thumbnails quickly) — drop
+      // this stale result instead of flashing an outdated image.
       if (cancelled || latestRequestedRef.current !== targetUrl) return;
-      setPrevUrl(currentUrlRef.current);
-      currentUrlRef.current = targetUrl;
-      setCurrentUrl(targetUrl);
-      clearTimeout(clearTimerRef.current);
-      clearTimerRef.current = window.setTimeout(() => setPrevUrl(null), 180);
+      window.clearTimeout(switchingTimeoutRef.current);
+      setIsSwitching(false);
+      setPrevious(currentRef.current);
+      currentRef.current = targetUrl;
+      setCurrent(targetUrl);
+      window.clearTimeout(clearPrevTimeoutRef.current);
+      clearPrevTimeoutRef.current = window.setTimeout(() => setPrevious(null), 220);
     }
 
     if (img.decode) {
@@ -82,7 +149,13 @@ export default function Loupe({
     };
   }, [targetUrl]);
 
-  useEffect(() => () => clearTimeout(clearTimerRef.current), []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(clearPrevTimeoutRef.current);
+      window.clearTimeout(switchingTimeoutRef.current);
+    },
+    []
+  );
 
   function handleKeyDown(e) {
     if (e.key === "ArrowLeft") {
@@ -107,19 +180,9 @@ export default function Loupe({
   // Only the discrete commit flow gets the pulse placeholder, and only
   // when there's no preview already sitting on screen — if Strength was
   // just steered, the settled preview is a better "is this ready yet"
-  // signal than a placeholder would be, and swapping to a placeholder
-  // over it would be a regression, not an improvement.
+  // signal than a placeholder would be.
   const showGeneratingPlaceholder = isGenerating && !previewImage;
-
-  // Same sizing approach in both states (placeholder vs. loaded), keyed
-  // off whichever ratio is relevant to that state — this is what stops
-  // the container (and the icons anchored to it) from ever collapsing
-  // toward zero and then jumping once a bitmap arrives.
-  const frameStyle = {
-    aspectRatio: ratioToAspectCss(showGeneratingPlaceholder ? pendingRatio : node.ratio),
-    height: "min(65vh, 600px)",
-    maxWidth: "100%",
-  };
+  const stageRatio = showGeneratingPlaceholder ? pendingRatio : node.ratio;
 
   return (
     <div
@@ -131,29 +194,46 @@ export default function Loupe({
     >
       {/* The stage: a bounded, framed area the image sits inside. Without
           this, the Loupe is just an image floating in raw background —
-          fine up to ~1440px, but on large/ultra-wide monitors it reads as
-          an empty void rather than "generous negative space." Capping the
-          width and giving it a faint border turns that same space into a
-          deliberate canvas boundary instead. */}
+          fine up to ~1440px, but on large/ultra-wide monitors it reads
+          as an empty void rather than "generous negative space." Capping
+          the width and giving it a faint border turns that same space
+          into a deliberate canvas boundary instead. (This was previously
+          dropped in favor of no framing at all, to work around a corner-
+          rounding artifact — but that artifact was actually the seed
+          data lying about its own aspect ratio, which is fixed at the
+          source now in studioMock.js, so the frame is safe to keep.) */}
       <div className="relative w-full h-full max-w-[1040px] mx-auto rounded-2xl border border-border/60 bg-studio-surface-raised/40 flex items-center justify-center p-4 sm:p-8">
-        <div className="relative max-w-full max-h-full">
+        {/* This wrapper's size comes entirely from aspectRatio + the
+            width/maxWidth pair above — metadata, not any <img>'s natural
+            size — so it never collapses while an image is loading, and
+            every absolutely positioned child (toolbar, prev/next arrows)
+            is positioned relative to *this*, so they're only ever in
+            their real, final spots — never bunched at a collapsed box's
+            center. */}
+        <div
+          data-stage-box="true"
+          className="relative"
+          style={{
+            aspectRatio: ratioToAspectCss(stageRatio),
+            width: "100%",
+            maxWidth: stageWidthCap(stageRatio),
+          }}
+        >
           {showGeneratingPlaceholder ? (
             <div
-              className="rounded-lg border border-border bg-cream-deep stage-pulse"
-              style={frameStyle}
+              className="absolute inset-0 rounded-lg border border-border bg-cream-deep stage-pulse"
               aria-hidden="true"
             />
           ) : (
             <div
-              className={`relative rounded-lg overflow-hidden bg-cream-deep border transition-colors ${
+              className={`absolute inset-0 rounded-lg overflow-hidden bg-cream-deep border transition-colors ${
                 isPreviewing ? "border-dashed border-accent/60" : "border-border"
               } ${isResuming ? "loupe-fade-in" : ""}`}
-              style={frameStyle}
             >
-              {prevUrl && (
+              {previous && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={prevUrl}
+                  src={previous}
                   alt=""
                   aria-hidden="true"
                   className="absolute inset-0 w-full h-full object-contain"
@@ -165,21 +245,40 @@ export default function Loupe({
                   bulk thumbnails in ThreadNode/Filmstrip don't need that
                   flexibility, so those use next/image instead.
 
-                  No `key` tied to the url here: by the time `currentUrl`
-                  updates, the browser has already decoded this exact url
-                  once (via the offscreen Image() above), so re-pointing
-                  this same element's `src` paints instantly from that
-                  cache — no remount, no reload, no flicker. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              {currentUrl && (
+                  `key={current}` is safe here even though it forces a
+                  remount: by the time `current` updates, the browser has
+                  already decoded this exact url once via the offscreen
+                  preloader above, so the remounted element paints from
+                  that decode instantly instead of loading from scratch. */}
+              {current && (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  key={currentUrl}
-                  src={currentUrl}
+                  key={current}
+                  src={current}
                   alt={node.prompt}
-                  className={`absolute inset-0 w-full h-full object-contain ${
-                    prevUrl ? "loupe-fade-in" : ""
-                  }`}
+                  className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-150 ${
+                    previous ? "loupe-fade-in" : ""
+                  } ${isSwitching ? "opacity-50" : "opacity-100"}`}
                 />
+              )}
+
+              {/* Feedback for the gap between clicking prev/next (or a
+                  filmstrip thumbnail) and that image actually finishing
+                  its decode — without this, a click on an uncached image
+                  looked dropped, since `current` doesn't change until
+                  decode completes. Suppressed while isPreviewing, which
+                  already has its own status pill for the same corner. */}
+              {isSwitching && !isPreviewing && (
+                <div
+                  className="absolute top-2 left-2 flex items-center gap-1.5 h-6 px-2 rounded-full bg-black/60 backdrop-blur-sm text-white"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <Loader2 size={11} className="animate-spin" aria-hidden="true" />
+                  <span className="text-[10px] font-mono uppercase tracking-wide">
+                    Loading…
+                  </span>
+                </div>
               )}
 
               {isPreviewing && (
@@ -195,15 +294,16 @@ export default function Loupe({
                   <span className="text-[10px] font-mono uppercase tracking-wide">
                     {previewStatus === "loading" ? "Rendering…" : "Previewing"}
                   </span>
-                  <button
-                    type="button"
-                    onClick={onDiscardPreview}
-                    className="w-4 h-4 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/15 transition-colors"
-                    aria-label="Discard preview"
-                    title="Discard preview"
-                  >
-                    <X size={10} />
-                  </button>
+                  <IconTooltip label="Discard preview" align="left">
+                    <button
+                      type="button"
+                      onClick={onDiscardPreview}
+                      className="w-4 h-4 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/15 transition-colors"
+                      aria-label="Discard preview"
+                    >
+                      <X size={10} />
+                    </button>
+                  </IconTooltip>
                 </div>
               )}
             </div>
@@ -212,24 +312,34 @@ export default function Loupe({
           {/* Prev/next siblings without touching the filmstrip */}
           {node.images.length > 1 && !showGeneratingPlaceholder && (
             <>
-              <button
-                type="button"
-                onClick={onPrev}
-                disabled={imageIndex === 0}
-                className="absolute left-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-sm disabled:opacity-0 transition-opacity hover:bg-black/75"
-                aria-label="Previous variant"
+              <IconTooltip
+                label="Previous variant"
+                className="absolute left-1.5 top-1/2 -translate-y-1/2"
               >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={onNext}
-                disabled={imageIndex === node.images.length - 1}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-sm disabled:opacity-0 transition-opacity hover:bg-black/75"
-                aria-label="Next variant"
+                <button
+                  type="button"
+                  onClick={onPrev}
+                  disabled={imageIndex === 0}
+                  className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-sm disabled:opacity-0 transition-opacity hover:bg-black/75"
+                  aria-label="Previous variant"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+              </IconTooltip>
+              <IconTooltip
+                label="Next variant"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2"
               >
-                <ChevronRight size={16} />
-              </button>
+                <button
+                  type="button"
+                  onClick={onNext}
+                  disabled={imageIndex === node.images.length - 1}
+                  className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-sm disabled:opacity-0 transition-opacity hover:bg-black/75"
+                  aria-label="Next variant"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </IconTooltip>
             </>
           )}
 
@@ -253,6 +363,7 @@ export default function Loupe({
                 onClick={onToggleCompare}
                 label={compareSelected ? "Remove from compare" : "Add to compare"}
                 icon={compareSelected ? <Check size={14} /> : <Plus size={14} />}
+                align="right"
               />
             </div>
           )}
@@ -262,9 +373,9 @@ export default function Loupe({
   );
 }
 
-function LoupeButton({ icon, label, onClick, active, disabled }) {
+function LoupeButton({ icon, label, onClick, active, disabled, align = "center" }) {
   return (
-    <div className="relative group/tooltip">
+    <IconTooltip label={label} align={align}>
       <button
         type="button"
         onClick={onClick}
@@ -279,12 +390,6 @@ function LoupeButton({ icon, label, onClick, active, disabled }) {
       >
         {icon}
       </button>
-      <span
-        role="tooltip"
-        className="pointer-events-none absolute right-0 top-full mt-1.5 whitespace-nowrap rounded-md bg-black/85 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg backdrop-blur-sm transition-opacity duration-150 delay-300 group-hover/tooltip:opacity-100 z-10"
-      >
-        {label}
-      </span>
-    </div>
+    </IconTooltip>
   );
 }

@@ -72,7 +72,7 @@ export default function ThreadNode({
               className="w-full h-full object-cover"
             />
           )}
-          {node.favoriteImageIndex !== null && (
+          {node.favoriteImageIndex != null && (
             <Star
               size={10}
               className="absolute top-0.5 right-0.5 fill-accent text-accent drop-shadow"

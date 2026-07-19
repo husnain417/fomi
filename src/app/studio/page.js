@@ -219,15 +219,25 @@ export default function StudioPage() {
     }
   }
 
-  // Strength is the only parameter wired into live preview this pass (§1.1)
-  // — Model/Ratio changes stay request-only, they change too much about
-  // the result to read as "steering" rather than "a different result."
+  // Strength and Ratio are both wired into live preview while branching
+  // (see PRODUCT_THINKING.md §3) — Model stays request-only, since
+  // swapping it changes too much about the result to read as "steering"
+  // rather than "a different result."
   function handleStrengthChange(strength) {
     if (!thread.branchContextId || !branchDraft) return;
     preview.requestPreview({
       model: branchDraft.model,
       ratio: branchDraft.ratio,
       strength,
+    });
+  }
+
+  function handleRatioChange(ratio) {
+    if (!thread.branchContextId || !branchDraft) return;
+    preview.requestPreview({
+      model: branchDraft.model,
+      ratio,
+      strength: branchDraft.strength,
     });
   }
 
@@ -475,6 +485,7 @@ export default function StudioPage() {
           branchDraft={branchDraft}
           onChangeDraft={(patch) => setBranchDraft((d) => (d ? { ...d, ...patch } : d))}
           onStrengthChange={handleStrengthChange}
+          onRatioChange={handleRatioChange}
           onCancelBranch={thread.cancelBranch}
           onCloseOverlay={() => setInspectorOverlayOpen(false)}
         />

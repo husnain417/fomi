@@ -50,6 +50,7 @@ export default function Inspector({
   branchDraft,
   onChangeDraft,
   onStrengthChange,
+  onRatioChange,
   onCancelBranch,
   onCloseOverlay,
 }) {
@@ -148,7 +149,10 @@ export default function Inspector({
                   <button
                     key={r}
                     type="button"
-                    onClick={() => onChangeDraft({ ratio: r })}
+                    onClick={() => {
+                      onChangeDraft({ ratio: r });
+                      onRatioChange?.(r);
+                    }}
                     className={`h-7 px-2 rounded-md text-[12px] font-mono border transition-colors ${
                       branchDraft.ratio === r
                         ? "bg-accent text-white border-accent"

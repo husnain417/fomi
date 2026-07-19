@@ -14,6 +14,21 @@ export const studioModels = [
 
 export const studioRatios = ["1:1", "4:5", "3:2", "16:9", "9:16"];
 
+// Same formula /api/generate/route.js uses for real generations — kept in
+// sync deliberately, so a seeded node's images are exactly as "honest"
+// about their own ratio as a freshly generated one. Previously every
+// seed node's images were a flat 640x800 (a 4:5 shape) regardless of what
+// its `ratio` field claimed, so a node declared "16:9" or "3:2" still
+// held a 4:5 picture — the Loupe's frame (correctly sized from `ratio`)
+// and the actual image (object-contain, never cropped/stretched) then
+// visibly disagreed, showing up as background-colored bars around the
+// image that scaled with however wrong that particular node's ratio was.
+function dimensionsForRatio(ratio, baseWidth = 600) {
+  const [w, h] = (ratio || "1:1").split(":").map(Number);
+  if (!w || !h) return { width: baseWidth, height: baseWidth };
+  return { width: baseWidth, height: Math.round((baseWidth * h) / w) };
+}
+
 function node({
   id,
   parentId = null,
@@ -36,10 +51,13 @@ function node({
     strength,
     createdAt,
     favoriteImageIndex: favoriteIndex,
-    images: Array.from({ length: count }).map((_, i) => ({
-      id: `${id}-img-${i}`,
-      url: seededPhoto(`${seed}-${i}`, 640, 800),
-    })),
+    images: Array.from({ length: count }).map((_, i) => {
+      const { width, height } = dimensionsForRatio(ratio);
+      return {
+        id: `${id}-img-${i}`,
+        url: seededPhoto(`${seed}-${i}`, width, height),
+      };
+    }),
   };
 }
 

@@ -21,11 +21,20 @@ just opens where you left it.
    Also fixed it so picking a model shows a checkmark and doesn't close
    the palette, so you can flip through options without reopening it
    every time.
-3. **Dark mode by default, only on this page.** Tools people stare at for
-   hours (Lightroom, VS Code, Figma) default dark for a reason — less eye
-   strain, and a bright frame around a photo messes with how you judge
-   its actual color. Homepage stays light, `/studio` starts dark, same
-   toggle either way.
+3. **One shared theme system, not a hardcoded default per route.** Both
+   `/` and `/studio` currently open light until the person makes an
+   explicit choice (toggle button, either page). I'd originally scoped
+   this as "studio opens dark by default, homepage stays light" — the
+   reasoning for that still stands (tools people stare at for hours
+   default dark for a reason: less eye strain, and a bright frame around
+   a photo messes with how you judge its actual color) — but the
+   per-route default never actually got wired up before this pass ended;
+   both the SSR init script and the client-side route-transition hook
+   fall back to light. What *is* built and working is the one-key,
+   one-`useTheme`-system part: toggle it on either page and that choice
+   sticks everywhere, no fighting between two competing preferences.
+   Making studio's *default* actually dark is a small, well-scoped
+   follow-up (flip the fallback in two places), not a redesign — see §5.
 
 ## 3. What I left out on purpose
 
@@ -39,10 +48,14 @@ just opens where you left it.
   you could do before is gone.
 - **A templates gallery.** Feels like a first-time-user feature on a page
   built for someone who's already deep in.
-- **Steering Model or Ratio, not just Strength.** Strength is genuinely a
-  dial — turn it up or down and it's still the same idea. Model or Ratio
-  change what the idea basically *is*, so those should stay a deliberate
-  action, not something you can slide past accidentally.
+- **Steering Model, not just Strength and Ratio.** Strength and Ratio are
+  both genuinely dials while you're mid-branch — turn either up, down, or
+  sideways and it's still recognizably the same attempt, just reframed or
+  intensified. Model is different: swapping it swaps the whole rendering
+  pipeline, not a parameter of one. That's a big enough shift in what
+  you'd actually get that it should stay a deliberate, request-only
+  action — not something you could drag past accidentally while chasing
+  the right Strength.
 
 ## 4. What inspired it
 
@@ -60,8 +73,9 @@ ideas." That's the actual gap the tree fills.
 
 ## 5. With another month
 
-- Let Ratio be steerable too, same as Strength — it's the next most
-  reasonable continuous parameter.
+- **Actually wire up the studio-defaults-dark behavior described in §2.3**
+  — right now it's reasoning without an implementation; the fallback in
+  both the SSR script and the route-transition hook needs to flip.
 - Auto-label branches by what changed in the prompt, not just the full
   prompt truncated — easier to scan the tree at a glance.
 - A "merge" action — take two branches' choices and combine them into one
@@ -72,12 +86,13 @@ ideas." That's the actual gap the tree fills.
 
 ## 6. The one thing that actually makes this different
 
-Live strength-steering while you're mid-branch. Branching is still a real
-decision — it becomes permanent history. But dragging the Strength slider
-just previews, live, without writing anything to the tree until you
-actually hit Generate. It's debounced and cancels its own in-flight
-requests, so if you drag it around a lot, you never get a slow old
-request landing late and showing you the wrong image.
+Live parameter-steering while you're mid-branch. Branching is still a
+real decision — it becomes permanent history. But dragging Strength or
+Ratio in the Inspector just previews, live, in the Loupe, without writing
+anything to the tree until you actually hit Generate. It's debounced and
+cancels its own in-flight requests, so if you drag either around a lot,
+you never get a slow old request landing late and showing you the wrong
+image.
 
 Everything else here — tree, Loupe, palette — is a better way to move
 through a request-and-wait loop every other tool already has. This is the
