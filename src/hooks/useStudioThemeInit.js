@@ -23,8 +23,8 @@ export function useStudioThemeInit() {
 
     if (stored) return; // explicit choice already made — respect it, do nothing
 
-    root.classList.add("dark");
-    root.style.colorScheme = "dark";
+    root.classList.remove("dark");
+    root.style.colorScheme = "light";
 
     return () => {
       if (getStoredTheme()) return; // a choice was made while in the studio

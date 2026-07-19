@@ -21,7 +21,7 @@ const studioThemeInitScript = `
   try {
     var stored = localStorage.getItem(${JSON.stringify(THEME_KEY)});
     var root = document.documentElement;
-    var theme = stored === "light" || stored === "dark" ? stored : "dark";
+    var theme = stored === "light" || stored === "dark" ? stored : "light";
     root.classList.toggle("dark", theme === "dark");
     root.style.colorScheme = theme;
   } catch (e) {}
